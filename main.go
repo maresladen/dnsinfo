@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	tf "toolFolder"
 )
 
 func main() {
 
 	//1 抓取gfw的屏蔽内容,txt 这里手工做，不需要每次都去抓，偶尔维护一下就可以了
-	//2 通过屏蔽内容的txt 得到Aip地址 
+	//2 通过屏蔽内容的txt 得到Aip地址
 	//3 生成文件
 	//4 ok 打包
 	//5 ok 推到7牛
@@ -15,5 +18,32 @@ func main() {
 	//7 保存 在上面一同做掉
 	//8 重启bind 这个在程序运行完之前，在程序中执行shell命令
 
-	fmt.Println("hello dns")
+	// fmt.Println("hello dns")
+
+	argNum := len(os.Args)
+	if argNum > 2 {
+		fmt.Println("只定义一个参数，分别为[-SERVER],[-CLIENT]")
+	}
+
+	if argNum > 1 {
+		switch strings.ToUpper(os.Args[1]) {
+		case "-SERVER":
+			fmt.Println("服务端行")
+			serverFun()
+		case "-CLIENT":
+			fmt.Println("客户端行")
+			clientFun()
+		}
+
+	}
+}
+
+func serverFun() {
+
+	tempFun := tf.GetIPA
+	tf.ReadLine("list.txt", tempFun)
+}
+
+func clientFun() {
+
 }
