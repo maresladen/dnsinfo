@@ -91,7 +91,7 @@ func SevenConverFile(filepath string) {
 	fmt.Println(ret)
 	//打印出错信息
 	if res != nil {
-		fmt.Println("io.Put failed:", res)
+		writelog(res,"上传失败")
 		return
 	}
 }

@@ -21,7 +21,7 @@ func GetIPA(htmlAdd string) {
 		writelog(err,"获取dns信息失败")
 		return
 	}
-	//TODO 这里改为将ip写入到一个文件中
+	//TODO 换成多协程运行，需要启用阻塞
 	var fileContent = zoneFile(htmlAdd, ns)
 
 	writeFile(Constfolder+`/`+htmlAdd, fileContent)
@@ -54,10 +54,11 @@ func ReadLine(filename string, handler func(string)) error {
 	}
 }
 
-//ZipFolder 加密文件夹
+//ZipFolder 压缩文件夹
 func ZipFolder(sourceFolder, targetFile string) {
 	// file write
 	fw, err := os.Create(targetFile)
+	fw.Chmod(0755)
 	if err != nil {
 		panic(err)
 	}
@@ -206,7 +207,7 @@ func CreateFloder(fName string) {
 //将内容写入到文件中
 func writeFile(filename, strContent string) {
 
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
 	if err != nil {
 		writelog(err, "打开文件失败")
 	}
@@ -257,7 +258,7 @@ func zoneFile(addname string, ipAddresses []string) string {
 }
 
 func writelog(err error, strDefine string) {
-	file, _ := os.OpenFile("errlog", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, _ := os.OpenFile("errlog", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
 	defer file.Close()
 	io.WriteString(file, err.Error()+"  |  "+strDefine+"\n\r")
 }

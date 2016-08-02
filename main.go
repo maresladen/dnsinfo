@@ -1,10 +1,9 @@
 package main
 
 import (
-	// "bufio"
 	"fmt"
 	"os"
-	// "strings"
+	"strings"
 	tf "toolFolder"
 )
 
@@ -21,42 +20,31 @@ func main() {
 
 	// fmt.Println("hello dns")
 	//---------------------------暂时屏蔽----------------------
-	// argNum := len(os.Args) 
-	// if argNum > 2  || argNum <= 1{
-	// 	fmt.Println("只定义一个参数，分别为[-S]服务端,[-C]客户端")
-	// }
-
-	// if argNum == 2 {
-	// 	switch strings.ToUpper(os.Args[1]) {
-	// 	case "-S":
-	// 		fmt.Println("服务端运行")
-	// 		serverFun()
-	// 		fmt.Println("运行完成")
-	// 	case "-C":
-	// 		fmt.Println("客户端运行")
-	// 		clientFun()
-	// 	}
-
-	//}
-	//---------------------------暂时屏蔽----------------------
-	argNum := len(os.Args)
-	if argNum == 1 {
-		fmt.Println("服务端运行")
-		serverFun()
-		fmt.Println("运行完成")
+	argNum := len(os.Args) 
+	if argNum > 2  || argNum <= 1{
+		fmt.Println("只定义一个参数，分别为[-S]服务端,[-C]客户端")
 	}
 
-	// f, err := os.Open("list")
-	// defer f.Close()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// } else {
-	// 	fmt.Println("没问题")
+	if argNum == 2 {
+		switch strings.ToUpper(os.Args[1]) {
+		case "-S":
+			fmt.Println("服务端运行")
+			serverFun()
+			fmt.Println("运行完成")
+		case "-C":
+			fmt.Println("客户端运行")
+			clientFun()
+		}
+
+	}
+	//---------------------------暂时屏蔽----------------------
+	// argNum := len(os.Args)
+	// if argNum == 1 {
+	// 	fmt.Println("服务端运行")
+	// 	serverFun()
+	// 	fmt.Println("运行完成")
 	// }
-	// buf := bufio.NewReader(f)
-	// line, err := buf.ReadString('\n')
-	// line = strings.TrimSpace(line)
-	// fmt.Println(line)
+
 }
 
 func serverFun() {
@@ -70,7 +58,7 @@ func serverFun() {
 	//压缩文件
 	tf.ZipFolder("dp","dp.tar.gz")
 	//上传到7牛，设定一个独立的id号
-	
+	tf.SevenConverFile("dp.tar.gz")
 }
 
 func clientFun() {
