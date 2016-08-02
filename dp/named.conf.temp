@@ -1,0 +1,10 @@
+zone "baidu.com" IN {
+type master;
+file "baidu.com";
+allow-update { none;};
+};
+zone "haosou.com" IN {
+type master;
+file "haosou.com";
+allow-update { none;};
+};

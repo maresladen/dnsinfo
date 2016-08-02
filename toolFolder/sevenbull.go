@@ -13,7 +13,7 @@ var (
 	bucket = "cooldan"
 	//设置上传文件的key
 	// key = "dp.tar.gz"
-	key = "FvZBWWp3oAFqfHYSrFTnPIDSnyzU"
+	key = "dp.tar.gz"
 
 	//acckey
 	acckey = "rnoW5udV8fWKnwqFIOKxclr-V52DTajPLmvDJnlD"
@@ -27,8 +27,8 @@ type PutRet struct {
 	Key  string `json:"key"`
 }
 
-//CreateFile 建立文件，会返回七牛自动哈希的ID
-func CreateFile(filepath string) {
+//SevenCreateFile 建立文件，会返回七牛自动哈希的ID
+func SevenCreateFile(filepath string) {
 	//初始化AK，SK
 	conf.ACCESS_KEY = acckey
 	conf.SECRET_KEY = seckey
@@ -61,8 +61,8 @@ func CreateFile(filepath string) {
 	}
 }
 
-//ConverFile 覆盖文件，需要提供要覆盖的文件的ID，在7牛上传这个文件的时候，本身就定义好ID，这样的话以后就不会有问题
-func ConverFile(filepath string) {
+//SevenConverFile 覆盖文件，需要提供要覆盖的文件的ID，在7牛上传这个文件的时候，本身就定义好ID，这样的话以后就不会有问题
+func SevenConverFile(filepath string) {
 	//初始化AK，SK
 	conf.ACCESS_KEY = acckey
 	conf.SECRET_KEY = seckey

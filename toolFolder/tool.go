@@ -11,33 +11,39 @@ import (
 	"strings"
 )
 
-//固定文件夹
-var constfolder = "dp"
+//Constfolder 固定文件夹
+var Constfolder = "dp"
 
 //GetIPA 获取IP地址，并保存为一个文件，放在固定的文件夹中
 func GetIPA(htmlAdd string) {
 	ns, err := net.LookupHost(htmlAdd)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Err: %s", err.Error())
+		writelog(err,"获取dns信息失败")
 		return
 	}
 	//TODO 这里改为将ip写入到一个文件中
-	for _, n := range ns {
-		fmt.Fprintf(os.Stdout, "--%s\n", n)
-	}
-	fmt.Println("---")
+	var fileContent = zoneFile(htmlAdd, ns)
+
+	writeFile(Constfolder+`/`+htmlAdd, fileContent)
 }
 
 //ReadLine 读取行内容，并执行获取ip地址的方法，保存方法也放在获取ip地址的方法中
 func ReadLine(filename string, handler func(string)) error {
 	f, err := os.Open(filename)
+	defer f.Close()
 	if err != nil {
+		writelog(err, "打开文件错误")
 		return err
 	}
 	buf := bufio.NewReader(f)
+
+	//头文件变量
 	for {
 		line, err := buf.ReadString('\n')
 		line = strings.TrimSpace(line)
+		//在头文件中增加内容
+		ztext := zoneText(line) + "\n"
+		writeFile(Constfolder+`/`+"named.conf.temp", ztext)
 		handler(line)
 		if err != nil {
 			if err == io.EOF {
@@ -135,7 +141,7 @@ func UnzipFolder(unzipFile string) {
 		// 显示文件
 		fmt.Println(h.Name)
 		// 打开文件
-		fw, err := os.OpenFile(constfolder+"/"+h.Name, os.O_CREATE|os.O_WRONLY, 0644 /*os.FileMode(h.Mode)*/)
+		fw, err := os.OpenFile(Constfolder+"/"+h.Name, os.O_CREATE|os.O_WRONLY, 0644 /*os.FileMode(h.Mode)*/)
 		if err != nil {
 			panic(err)
 		}
@@ -189,8 +195,8 @@ func UntarFile(file, path string) error {
 	return nil
 }
 
-//查文件是存在，不存在则建立文件夹
-func createFloder(fName string) {
+//CreateFloder 查看文件夹是否存在，不存在则建立文件夹
+func CreateFloder(fName string) {
 	err := os.Chdir(fName)
 	if err != nil {
 		os.Mkdir(fName, 0777)
@@ -199,14 +205,15 @@ func createFloder(fName string) {
 
 //将内容写入到文件中
 func writeFile(filename, strContent string) {
-	if checkFileIsExist(filename) {
-		file, _ := os.OpenFile(filename, os.O_SYNC, 0666)
-		defer file.Close()
-		io.WriteString(file, strContent)
-	} else {
-		file, _ := os.Create(filename)
-		defer file.Close()
-		file.WriteString(strContent)
+
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		writelog(err, "打开文件失败")
+	}
+	defer file.Close()
+	n, err := file.WriteString(strContent)
+	if err != nil && n < len(strContent) {
+		writelog(err, "写文件失败")
 	}
 }
 
@@ -229,7 +236,7 @@ func zoneText(addName string) string {
 
 func zoneFile(addname string, ipAddresses []string) string {
 	linuxName := "linux." + addname + "."
-	rootName := "root" + addname + "."
+	rootName := "root." + addname + "."
 	start := `$ttl    86400` + "\n" +
 		`@               IN SOA  ` + linuxName + "  " + rootName + " (" + "\n" +
 		`                                       1053891162` + "\n" +
@@ -247,4 +254,10 @@ func zoneFile(addname string, ipAddresses []string) string {
 		}
 	}
 	return start
+}
+
+func writelog(err error, strDefine string) {
+	file, _ := os.OpenFile("errlog", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	defer file.Close()
+	io.WriteString(file, err.Error()+"  |  "+strDefine+"\n\r")
 }

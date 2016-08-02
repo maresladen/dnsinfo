@@ -1,9 +1,10 @@
 package main
 
 import (
+	// "bufio"
 	"fmt"
 	"os"
-	"strings"
+	// "strings"
 	tf "toolFolder"
 )
 
@@ -19,31 +20,59 @@ func main() {
 	//8 重启bind 这个在程序运行完之前，在程序中执行shell命令
 
 	// fmt.Println("hello dns")
+	//---------------------------暂时屏蔽----------------------
+	// argNum := len(os.Args) 
+	// if argNum > 2  || argNum <= 1{
+	// 	fmt.Println("只定义一个参数，分别为[-S]服务端,[-C]客户端")
+	// }
 
+	// if argNum == 2 {
+	// 	switch strings.ToUpper(os.Args[1]) {
+	// 	case "-S":
+	// 		fmt.Println("服务端运行")
+	// 		serverFun()
+	// 		fmt.Println("运行完成")
+	// 	case "-C":
+	// 		fmt.Println("客户端运行")
+	// 		clientFun()
+	// 	}
+
+	//}
+	//---------------------------暂时屏蔽----------------------
 	argNum := len(os.Args)
-	if argNum > 2 {
-		fmt.Println("只定义一个参数，分别为[-SERVER],[-CLIENT]")
+	if argNum == 1 {
+		fmt.Println("服务端运行")
+		serverFun()
+		fmt.Println("运行完成")
 	}
 
-	if argNum > 1 {
-		switch strings.ToUpper(os.Args[1]) {
-		case "-SERVER":
-			fmt.Println("服务端行")
-			serverFun()
-		case "-CLIENT":
-			fmt.Println("客户端行")
-			clientFun()
-		}
-
-	}
+	// f, err := os.Open("list")
+	// defer f.Close()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// } else {
+	// 	fmt.Println("没问题")
+	// }
+	// buf := bufio.NewReader(f)
+	// line, err := buf.ReadString('\n')
+	// line = strings.TrimSpace(line)
+	// fmt.Println(line)
 }
 
 func serverFun() {
-
+	
+	//建立文件夹
+	// tf.CreateFloder(tf.Constfolder)
+	//委托方法，通过此方法建立文件
 	tempFun := tf.GetIPA
-	tf.ReadLine("list.txt", tempFun)
+	//读取配置文件，并调用委托方法
+	tf.ReadLine("list", tempFun)
+	//压缩文件
+	tf.ZipFolder("dp","dp.tar.gz")
+	//上传到7牛，设定一个独立的id号
+	
 }
 
 func clientFun() {
-
+	fmt.Println("我是客户端，实际方法还未写")
 }
