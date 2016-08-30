@@ -1,0 +1,4 @@
+{
+    "DnsqAddressPATH":"/etc/dnsmasq",
+    "DnsqAddressName":"dnsmasq.more.conf"
+}

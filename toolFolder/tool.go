@@ -4,31 +4,64 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
-//Constfolder 固定文件夹
-var Constfolder = "dp"
+var (
+	Constfolder      = "dp"
+	AddressValue     = ""
+	DnsFileName      = "test.txt"
+	DnsFilePath      = ""
+	DnsGetErrAddress = ""
+)
+
+type mconfig struct {
+	DnsqAddressPATH string
+	DnsqAddressName string
+}
+
+//读取配置文件
+func ConfigSet() {
+	var m mconfig
+	fi, err := os.Open("DNSClient.json")
+	if err != nil {
+		writelog(err, "get config json data wrong")
+	} else {
+		temp, _ := ioutil.ReadAll(fi)
+		json.Unmarshal(temp, &m)
+		DnsFileName = m.DnsqAddressName
+		DnsFilePath = m.DnsqAddressPATH
+	}
+}
 
 //GetIPA 获取IP地址，并保存为一个文件，放在固定的文件夹中
 func GetIPA(htmlAdd string) {
 	ns, err := net.LookupHost(htmlAdd)
 	if err != nil {
-		writelog(err,"获取dns信息失败")
+		writelog(err, "获取dns信息失败")
+		DnsGetErrAddress += htmlAdd + "\n"
 		return
 	}
 	//TODO 换成多协程运行，需要启用阻塞
-	var fileContent = zoneFile(htmlAdd, ns)
-
-	writeFile(Constfolder+`/`+htmlAdd, fileContent)
+	if len(ns) > 0 {
+		AddressValue += `address=/` + htmlAdd + `/` + ns[0] + "\n"
+		fmt.Println(htmlAdd)
+	}
+	// ch <- htmlAdd
 }
 
 //ReadLine 读取行内容，并执行获取ip地址的方法，保存方法也放在获取ip地址的方法中
 func ReadLine(filename string, handler func(string)) error {
+	os.Remove(DnsFileName)
 	f, err := os.Open(filename)
 	defer f.Close()
 	if err != nil {
@@ -36,22 +69,34 @@ func ReadLine(filename string, handler func(string)) error {
 		return err
 	}
 	buf := bufio.NewReader(f)
-
-	//头文件变量
+	// tempIndex := 0
+	// read2End := false
+	// ch := make(chan string, 4)
 	for {
+		// if read2End {
+		// 	break
+		// }
+		// tempIndex += 1
 		line, err := buf.ReadString('\n')
 		line = strings.TrimSpace(line)
-		//在头文件中增加内容
-		ztext := zoneText(line) + "\n"
-		writeFile(Constfolder+`/`+"named.conf.temp", ztext)
+
 		handler(line)
 		if err != nil {
 			if err == io.EOF {
+				writeFile(DnsFileName, AddressValue)
+				writeFile("dnsErrAddress", DnsGetErrAddress)
+				// read2End = true
 				return nil
 			}
-			return err
+			continue
 		}
 	}
+	// for i := 0; i < tempIndex; i++ {
+	// 	tempAddr := <-ch
+	// 	fmt.Println(tempAddr)
+	// }
+
+	// return nil
 }
 
 //ZipFolder 压缩文件夹
@@ -87,7 +132,7 @@ func ZipFolder(sourceFolder, targetFile string) {
 			continue
 		}
 		// 打印文件名称
-		fmt.Println(fi.Name())
+		//fmt.Println(fi.Name())
 		// 打开文件
 		fr, err := os.Open(dir.Name() + "/" + fi.Name())
 		if err != nil {
@@ -110,6 +155,47 @@ func ZipFolder(sourceFolder, targetFile string) {
 		if err != nil {
 			panic(err)
 		}
+	}
+	fmt.Println("tar.gz ok")
+}
+
+func ZipFile(fileName, targetFile string) {
+	fw, err := os.Create(targetFile)
+	fw.Chmod(0755)
+	if err != nil {
+		panic(err)
+	}
+	defer fw.Close()
+	// gzip write
+	gw := gzip.NewWriter(fw)
+	defer gw.Close()
+	// tar write
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+	fr, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer fr.Close()
+	fi, err := fr.Stat()
+	if err != nil {
+		panic(err)
+	}
+	// 信息头
+	h := new(tar.Header)
+	h.Name = fi.Name()
+	h.Size = fi.Size()
+	h.Mode = int64(fi.Mode())
+	h.ModTime = fi.ModTime()
+	// 写信息头
+	err = tw.WriteHeader(h)
+	if err != nil {
+		panic(err)
+	}
+	// 写文件
+	_, err = io.Copy(tw, fr)
+	if err != nil {
+		panic(err)
 	}
 	fmt.Println("tar.gz ok")
 }
@@ -227,38 +313,42 @@ func checkFileIsExist(filename string) bool {
 	return exist
 }
 
-func zoneText(addName string) string {
-	return `zone "` + addName + `" IN {` + "\n" +
-		`type master;` + "\n" +
-		`file "` + addName + `";` + "\n" +
-		`allow-update { none;};` + "\n" +
-		`};`
-}
-
-func zoneFile(addname string, ipAddresses []string) string {
-	linuxName := "linux." + addname + "."
-	rootName := "root." + addname + "."
-	start := `$ttl    86400` + "\n" +
-		`@               IN SOA  ` + linuxName + "  " + rootName + " (" + "\n" +
-		`                                       1053891162` + "\n" +
-		`                                        3H` + "\n" +
-		`                                        15M` + "\n" +
-		`                                        1W` + "\n" +
-		`                                        1D` + "\n" +
-		`                        IN NS        ` + linuxName + "\n"
-	count := len(ipAddresses)
-	for index, ip := range ipAddresses {
-		if index == count-1 {
-			start += "*                 IN A " + ip
-		} else {
-			start += "                  IN A " + ip + "\n"
-		}
-	}
-	return start
-}
-
 func writelog(err error, strDefine string) {
 	file, _ := os.OpenFile("errlog", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
 	defer file.Close()
 	io.WriteString(file, err.Error()+"  |  "+strDefine+"\n\r")
+}
+
+func DownloadFiles(urls string) {
+	res, err := http.Get(urls)
+	if err != nil {
+		writelog(err, "获取七牛地址失败")
+		return
+	}
+	defer res.Body.Close()
+	file, err := os.OpenFile(DnsFilePath+DnsFileName, os.O_CREATE|os.O_WRONLY, 0755)
+	if err != nil {
+		writelog(err, "建立文件失败")
+		return
+	}
+	defer file.Close()
+	io.Copy(file, res.Body)
+}
+
+func GetEnvPath() string {
+	file, _ := exec.LookPath(os.Args[0])
+	//得到全路径，比如在windows下E:\\golang\\test\\a.exe
+	path, _ := filepath.Abs(file)
+	//将全路径用\\分割，得到4段，①E: ②golang ③test ④a.exe
+	splitstring := strings.Split(path, "\\")
+
+	//size为4
+	size := len(splitstring)
+
+	//将全路径用最后一段(④a.exe)进行分割，得到2段，①E:\\golang\\test\\ ②a.exe
+	splitstring = strings.Split(path, splitstring[size-1])
+
+	//将①(E:\\golang\\test\\)中的\\替换为/，最终得到结果E:/golang/test/
+	rst := strings.Replace(splitstring[0], "\\", "/", size-1)
+	return rst
 }

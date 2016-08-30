@@ -9,20 +9,9 @@ import (
 
 func main() {
 
-	//1 抓取gfw的屏蔽内容,txt 这里手工做，不需要每次都去抓，偶尔维护一下就可以了
-	//2 通过屏蔽内容的txt 得到Aip地址
-	//3 生成文件
-	//4 ok 打包
-	//5 ok 推到7牛
-	//6 定时服务 从7牛下载 这个可能要写shell，运行，运行完之后关闭
-	//7 保存 在上面一同做掉
-	//8 重启bind 这个在程序运行完之前，在程序中执行shell命令
-
-	// fmt.Println("hello dns")
-	//---------------------------暂时屏蔽----------------------
-	argNum := len(os.Args) 
-	if argNum > 2  || argNum <= 1{
-		fmt.Println("只定义一个参数，分别为[-S]服务端,[-C]客户端")
+	argNum := len(os.Args)
+	if argNum > 2 || argNum <= 1 {
+	         	fmt.Println("只定义一个参数，分别为[-S]服务端,[-C]客户端")
 	}
 
 	if argNum == 2 {
@@ -48,19 +37,28 @@ func main() {
 }
 
 func serverFun() {
-	
+
+	tf.ConfigSet()
+	// fmt.Println(tf.GetEnvPath() + tf.DnsFileName)
 	//建立文件夹
 	// tf.CreateFloder(tf.Constfolder)
 	//委托方法，通过此方法建立文件
 	tempFun := tf.GetIPA
 	//读取配置文件，并调用委托方法
-	tf.ReadLine("list", tempFun)
-	//压缩文件
-	tf.ZipFolder("dp","dp.tar.gz")
+	tf.ReadLine("list.txt", tempFun)
+	//压缩文件,不再压缩文件,直接上传
+	// tf.ZipFile(tf.DnsFileName, "dp.tar.gz")
 	//上传到7牛，设定一个独立的id号
-	tf.SevenConverFile("dp.tar.gz")
+	tf.SevenDelFile(tf.DnsFileName)
+	tf.SevenCreateFile(tf.GetEnvPath()+tf.DnsFileName, tf.DnsFileName)
 }
 
 func clientFun() {
-	fmt.Println("我是客户端，实际方法还未写")
+	tf.ConfigSet()
+	htmlAddr := tf.SevenGetDownLoadUrl()
+	fmt.Println(htmlAddr)
+	tf.DownloadFiles(htmlAddr)
+	fmt.Println("下载完成??")
+	// tf.UntarFile("dp.tar.gz", tf.DnsFilePath)
+	fmt.Println("dnsmasq重启,自动运行命令行")
 }
